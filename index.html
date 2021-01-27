@@ -1,0 +1,248 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>Smith Chart</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Sign Up Form</title>
+	<link rel="stylesheet" href="css/normalize.css">
+	<link href='https://fonts.googleapis.com/css?family=Nunito:400,300' rel='stylesheet' type='text/css'>
+	<link rel="preconnect" href="https://fonts.gstatic.com">
+	<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="css/main.css">
+	<script src="./js/Chart.min.js"></script>
+	<script src="./js/Chart.smith.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<style>
+	body {
+		padding: 0;
+		margin: 0;
+		display: flex;
+	}
+	
+	#canvas-holder {
+		width: 60%;
+	}
+	</style>
+</head>
+
+<body>
+	<div id="canvas-holder">
+		<canvas id="chart-area" width="1200" height="1200" /> 
+	</div>
+	<form action="" method="post">
+		<h1>Les caractéristiques de la ligne</h1>
+		<fieldset>
+			<legend><span class="number">1</span>Configuration</legend>
+			<label for="zc">Impédance caractéristique de la ligne :</label>
+			<input type="text" id="zc" name="zc">
+			<br/>
+			<label for="lamda">La permittivité relative &epsilon;r:</label>
+			<input type="text" id="lamda" name="lamda">
+			<br/>
+			<label for="freq">Fréquence en MHz:</label>
+			<input type="number" id="freq" name="freq">
+
+		</fieldset>
+		<fieldset>
+			<legend><span class="number">2</span>ZL=<input type="text" id="r" name="r">+j<input type="text" id="x" name="x">:</legend>
+			
+			
+			
+		</fieldset>
+		<fieldset>
+			<legend><span class="number">3</span>Choice :</legend>
+			
+			<input type="radio" id="co" value="co" name="type" checked><label for="co" class="light" >Circuit ouvert</label><br>
+          	<input type="radio" id="cc" value="cc" name="type"><label for="cc" class="light">Court circuit</label>
+		</fieldset>
+		
+		<button type="submit" >donner les résults</button>
+		<fieldset class="affichage">
+			<legend><span class="number">4</span>Result :</legend>
+			<div id="result">
+
+				
+
+			</div>
+			
+		</fieldset>
+	</form>
+
+	<div class="loading">
+		<div class="loadImg">
+			<img src="https://www.ecoles.com.tn/sites/default/files/universite/logo/sup-com-logo.jpg" alt="logo">
+		</div>
+		<div class="about">
+			<h1>Project hyperfrequence</h1>
+			<p>Par Bacem Ben Hamed , Mouadh Tira et Firas Yahyaoui <span class="encadre">Encadré par Mme. Rim Barrak </span> .</p>
+			
+		</div>
+
+		<div class="spin"></div>
+
+
+	</div>
+	
+	<script>
+		function calcul_distance(resist,react,ICL,ICR){
+
+
+	        if (resist==ICL && ICL!=0){
+	            t1= -react/(2*ICL);
+	            t2= -react/(2*ICL);
+	        }else {
+	             t1 = ( react + ( Math.sqrt( resist * ( ( ICL-resist )**2 + react**2)/ICL) ) )/ (resist-ICL) ;
+	             t2 = ( react - ( Math.sqrt( resist * ( ( ICL-resist ) **2+react**2)/ICL) ))/(resist-ICL);
+	        }
+	        if (t1>=0) {
+	             d1= Math.atan(t1)/(2*Math.PI);
+	        }
+	        else{
+	            d1=( Math.atan(t1)+Math.PI )/(2*Math.PI);
+	        }
+
+	        if( t2>=0 ){
+	            d2= Math.atan(t2)/(2*Math.PI);
+	        }
+	        else{
+	            d2=( Math.atan(t2)+Math.PI )/(2*Math.PI);
+	        }
+
+	        return [d1*ICR,d2*ICR,t1,t2];
+
+	    }
+
+    	function calcul_b(resist,react,ICL,ICR) {
+	        var  [d1,d2,t1,t2] = calcul_distance (resist,react,ICL,ICR);
+	        b1= ( (resist**2)*t1 - (ICL - react*t1)*(react + ICL*t1)) / (ICL * (resist**2 + (react + ICL*t1)**2));
+	        b2= ( (resist**2)*t2 - (ICL - react*t2)*(react + ICL*t2)) / (ICL * (resist**2 + (react + ICL*t2)**2));
+
+	        return  [b1,b2];
+
+        }
+        function circuit_ouvert(resist,react,ICL,ICR){
+	        [d1,d2,t1,t2]=calcul_distance(resist,react,ICL,ICR);
+	        [b1,b2]=calcul_b(resist,react,ICL,ICR);
+	        l1=(-Math.atan(b1*ICL))/ (2*Math.PI);
+	        l2=(-Math.atan(b2*ICL))/ (2*Math.PI);
+	        if (t1==t2) {
+	            d2=0;
+	            l2=0;
+			   }
+			if(l1 < 0)
+			   l1 = l1 + 0.5;
+			if(l2 < 0)
+				l2 = l2 + 0.5;
+	        if(isNaN(d1) ){
+        		d1 = 0;
+	        }
+	        if(isNaN(l1) ){
+	        	l1 = 0;
+	        }
+	        if(isNaN(d2)){
+	        	d2 = 0;
+	        }
+	        if(isNaN(l2)){
+	        	l2 = 0;
+	        }
+	        return [[d1,l1*ICR],[d2,l2*ICR]];
+	    }
+		 
+
+		function court_circuit(resist,react,ICL,ICR){
+        var [d1,d2,t1,t2]=calcul_distance(resist,react,ICL,ICR);
+        var [b1,b2]=calcul_b(resist,react,ICL,ICR);
+        l1=(-Math.atan(1/(b1*ICL)))/ (2*Math.PI);
+        l2=(-Math.atan(1/(b2*ICL)))/ (2*Math.PI);
+
+        if (t1==t2){
+            d2=0;
+            l2=0;
+		}
+		if(l1 < 0)
+			l1 = l1 + 0.5;
+		if(l2 < 0)
+			l2 = l2 + 0.5;
+        if(isNaN(d1) ){
+    		d1 = 0;
+        }
+        if(isNaN(l1) ){
+        	l1 = 0;
+        }
+        if(isNaN(d2)){
+        	d2 = 0;
+        }
+        if(isNaN(l2)){
+        	l2 = 0;
+        }
+        return [[d1,l1*ICR],[d2,l2*ICR]];
+
+        }
+        
+        function affiche_smith(x , r) {
+			var ctx = document.getElementById("chart-area").getContext("2d");
+			window.mySmith = new Chart(ctx, {
+				type: 'smith',
+				options: {
+					elements: {
+						point: {
+							pointStyle: 'cross',
+							radius: 10,
+							hoverRadius: 10,
+							borderColor: 'red'
+						}
+					}
+				},
+				data: {
+					datasets: [{
+						label: 'Smith Chart Example',
+						data: [{
+							real: 1.0,
+							imag: 0
+						}, {
+							real: x,
+							imag: r
+						}]
+					}]
+				}
+			})
+		};
+        
+		$(document).ready(function(){
+			$(".affichage").hide();
+
+			$("form").on("submit" ,function(e){
+				var resist = parseFloat($("#r").val());
+				var react = parseFloat($("#x").val());
+				var ICL = parseFloat($("#zc").val());
+				var freq = parseFloat($("#freq").val());
+				var eps = parseFloat($("#lamda").val());
+				var ICR = 300/(Math.sqrt(eps)*freq);
+				console.log(resist,react,ICL,ICR);
+				e.preventDefault();
+				affiche_smith(resist/ICL ,react/ICL );
+				if ($('#co').is(':checked')) {
+					$(".affichage").hide();
+					var result = circuit_ouvert(resist,react,ICL,ICR);
+					$("#result").html('<span class="pointResult"><span class="point"> (d , l)  = </span> ('+result[0][0].toFixed(7)+' , '+result[1][1].toFixed(7)+') </span><br/><span class="pointResult"> (d , l)  = </span> ( '+result[1][0].toFixed(7)+', '+result[0][1].toFixed(7)+')<br/>');
+					$(".affichage").show( "slow" );
+
+				}else{
+					$(".affichage").hide();
+					var result = court_circuit(resist,react,ICL,ICR);
+					$("#result").html('<span class="pointResult"><span class="point"> (d , l)  = </span> ('+result[0][0].toFixed(7)+' , '+result[1][1].toFixed(7)+') </span><br/><span class="pointResult"> (d , l)  = </span> ( '+result[1][0].toFixed(7)+', '+result[0][1].toFixed(7)+')<br/>');
+					$(".affichage").show( "slow" );
+				}
+			
+				return false;
+			});
+		});
+
+	   	
+	affiche_smith(1.0,0);
+	</script>
+</body>
+
+</html>
